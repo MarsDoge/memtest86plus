@@ -206,8 +206,8 @@ Prepare_Directory() {
     # Copy OVMF* files from /usr/share
     if [ ! -f OVMF.fd ] || [ ! -f OVMF_VARS.fd ] || [ ! -f OVMF_CODE.fd ]; then
         cp /usr/share/ovmf/OVMF.fd .
-        cp /usr/share/OVMF/OVMF_CODE.fd .
-        cp /usr/share/OVMF/OVMF_VARS.fd .
+        cp /usr/share/ovmf/OVMF_CODE.fd .
+        cp /usr/share/ovmf/OVMF_VARS.fd .
     fi
 }
 
