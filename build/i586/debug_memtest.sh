@@ -76,7 +76,7 @@ Check() {
     fi
 
     # Check for presence of OVMF32_VARS.fd and OVMF32_CODE.fd
-    if [ ! -f OVMF32_CODE.fd ] && [ ! -f /usr/share/OVMF/OVMF32_CODE.fd ]; then
+    if [ ! -f OVMF32_CODE.fd ] && [ ! -f /usr/share/ovmf/OVMF32_CODE.fd ]; then
         echo "Package ovmf-ia32 not installed. Type 'sudo apt install ovmf-ia32' and create some symlinks."
         echo "Or copy your own versions of OVMF32_VARS.fd and OVMF32_CODE.fd into this directory"
         exit 1
@@ -203,8 +203,8 @@ Prepare_Directory() {
 
     # Copy OVMF* files from /usr/share
     if [ ! -f OVMF32_VARS.fd ] || [ ! -f OVMF32_CODE.fd ]; then
-        cp /usr/share/OVMF/OVMF32_CODE.fd .
-        cp /usr/share/OVMF/OVMF32_VARS.fd .
+        cp /usr/share/ovmf/OVMF32_CODE.fd .
+        cp /usr/share/ovmf/OVMF32_VARS.fd .
     fi
 }
 
