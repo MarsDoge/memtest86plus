@@ -11,6 +11,9 @@
 #include "boot.h"
 #include "bootparams.h"
 #include "efi.h"
+#if defined(EFI_SNP_AB_TEST) && EFI_SNP_AB_TEST == 1
+#include "efisnp.h"
+#endif
 
 #include "memsize.h"
 
@@ -122,6 +125,17 @@ static void print_hex(uintptr_t value)
     } while (value > 0);
     print_string(str);
 }
+
+#if defined(EFI_SNP_AB_TEST) && EFI_SNP_AB_TEST == 1
+static void print_snp_log(efi_handle_t handle, const char *operation,
+                          efi_status_t status, uint32_t state)
+{
+    print_string("SNP-AB handle=0x"); print_hex((uintptr_t)handle);
+    print_string(" "); print_string((char *)operation);
+    print_string(" status=0x"); print_hex(status);
+    print_string(" state/count="); print_dec(state); print_string("\n");
+}
+#endif
 
 static void wait_for_key(void)
 {
@@ -799,6 +813,19 @@ boot_params_t *efi_setup(efi_handle_t handle, efi_system_table_t *sys_table_arg,
         print_string("set_screen_info() failed\n");
         goto fail;
     }
+
+#ifdef EFI_SNP_AB_TEST
+#if EFI_SNP_AB_TEST == 1
+    print_string("SNP-AB B: explicit SNP Shutdown/Stop; failure blocks memtest\n");
+    status = snp_stop_all(sys_table->boot_services, print_snp_log);
+    if (status != EFI_SUCCESS) {
+        print_string("SNP-AB FAILED: memtest NOT started; cold reboot required\n");
+        goto fail;
+    }
+#else
+    print_string("SNP-AB A: baseline, NO explicit SNP cleanup\n");
+#endif
+#endif
 
     status = set_efi_info_and_exit_boot_services(handle, boot_params);
     if (status != EFI_SUCCESS) {

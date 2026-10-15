@@ -4,6 +4,14 @@ OBJCOPY ?= objcopy
 
 GIT ?= git
 
+# Opt-in diagnostic binaries: 0 = A baseline, 1 = B explicit SNP cleanup.
+ifneq ($(SNP_AB_TEST),)
+  ifeq ($(filter $(SNP_AB_TEST),0 1),)
+    $(error SNP_AB_TEST must be 0 or 1)
+  endif
+  SNP_TEST_FLAGS = -DEFI_SNP_AB_TEST=$(SNP_AB_TEST)
+endif
+
 ifeq ($(GIT),none)
   GIT_AVAILABLE = false
 else
@@ -123,9 +131,10 @@ boot/loongarch/%.o: ../../boot/loongarch/%.S ../../boot/boot.h app/build_version
 	@mkdir -p boot/loongarch
 	$(CC) -x assembler-with-cpp -c -I../../boot -Iapp -o $@ $<
 
-boot/efisetup.o: ../../boot/efisetup.c
+# Rebuild the stub when switching A/B/default, even without a clean build.
+boot/efisetup.o: ../../boot/efisetup.c FORCE
 	@mkdir -p boot
-	$(CC) -c $(CFLAGS) $(OPT_SMALL)  $(INC_DIRS)  -o $@ $< -MMD -MP -MT $@ -MF $(@:.o=.d)
+	$(CC) -c $(CFLAGS) $(SNP_TEST_FLAGS) $(OPT_SMALL)  $(INC_DIRS)  -o $@ $< -MMD -MP -MT $@ -MF $(@:.o=.d)
 
 system/reloc.o: ../../system/reloc64.c
 	@mkdir -p system
@@ -209,7 +218,8 @@ mt86plus: memtest_shared.bin boot/loongarch/header.o ldscripts/memtest_efi.lds
 	$(eval SPLIT=$(shell nm -t d memtest_shared | awk '/ _etext_ro$$/{print $$1+0}'))
 	dd if=memtest_shared.bin of=memtest_text.bin bs=$(SPLIT) count=1 2>/dev/null
 	dd if=memtest_shared.bin of=memtest_data.bin bs=$(SPLIT) skip=1 2>/dev/null
-	$(LD) --defsym=_bss_size=$(word 3,$(SIZES)) -T ldscripts/memtest_efi.lds boot/loongarch/header.o -b binary memtest_text.bin memtest_data.bin -o mt86plus
+	$(LD) --defsym=_bss_size=$(word 3,$(SIZES)) -T ldscripts/memtest_efi.lds boot/loongarch/header.o -b binary memtest_text.bin memtest_data.bin -o memtest_efi.elf
+	$(OBJCOPY) -O binary memtest_efi.elf mt86plus
 
 esp.img: mt86plus
 	@mkdir -p iso/EFI/BOOT

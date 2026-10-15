@@ -198,7 +198,7 @@ typedef struct {
     void                *close_protocol;
     void                *open_protocol_information;
     void                *protocols_per_handle;
-    void                *locate_handle_buffer;
+    efi_status_t        (efiapi *locate_handle_buffer)(int, efi_guid_t *, void *, uintn_t *, efi_handle_t **);
     efi_status_t        (efiapi *locate_protocol)(efi_guid_t *, void *, void **);
     void                *install_multiple_protocol_interfaces;
     void                *uninstall_multiple_protocol_interfaces;
